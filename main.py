@@ -88,7 +88,7 @@ sequence_6.addchild(dusty_spot)
 sequence_6.addchild(clean_spot_2)
 
 def start():
-    mode = raw_input("Please enter a Mode: ")
+    mode = raw_input("Please enter a mode: ")
     loop_time = float(raw_input("Please enter your loop speed (1 = 1s per loop): "))
 
     while True:
@@ -110,7 +110,7 @@ def start():
                 blackboard['GENERAL'] = True
             else:
                 print("Mode is invalid, please enter another one.")
-                mode = raw_input("Please enter a Mode: ")
+                mode = raw_input("Please enter a mode: ")
 
             priority_1.action()
         else:
