@@ -33,7 +33,7 @@ or
 ```bash
 \%\%\%\%\%\%\%\%\%\% BATTERY: 95
 I am cleaning a dusty spot!
-There is 33 left.
+There is 33 sec left.
 ```
 
 To exit the program, you can just press `ctrl + C`.

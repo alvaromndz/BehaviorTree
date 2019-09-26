@@ -83,14 +83,12 @@ class GoHome(Node):
         self.blackboard = blackboard
 
     def action(self):
-        self.blackboard['RUNNING_NODE'] = self
-
-        if self.blackboard['TASK_TIME'] == 0:
-            self.blackboard['TASK_TIME'] = random.randrange(1,10,1)
+        if self.blackboard['TASK_TIME'] > 10:
+            self.blackboard['TASK_TIME'] = random.randrange(1, 10)
         
         print("I'm going home! Approximately " + str(self.blackboard['TASK_TIME']) + " sec away.")
 
-        if self.blackboard['TASK_TIME'] > 1:
+        if self.blackboard['TASK_TIME'] > 1 and self.blackboard['BATTERY_LEVEL'] >= self.blackboard['TASK_TIME']:
             return 'Running'
         else:
             return 'True'
@@ -130,7 +128,7 @@ class CleanSpot(Node):
             else:
                 print("I'm cleaning a spot!")
 
-            print("There is " + str(self.blackboard['TASK_TIME']) + " left.")
+            print("There is " + str(self.blackboard['TASK_TIME']) + " sec left.")
             return 'Running'
         else: 
             self.blackboard['SPOT'] = False
@@ -140,7 +138,6 @@ class CleanSpot(Node):
 
 class DoneSpot(Node):
     def action(self):
-        self.blackboard['SPOT'] = False
         print("I am done cleaning spot!")
         self.blackboard['GENERAL'] = True
         return 'True'
