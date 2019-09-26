@@ -19,7 +19,6 @@ class Composites(Node):
 
 
 class Sequence(Composites):
-
     def action(self):
         for child in self.children:
             result = child.action()
@@ -56,13 +55,16 @@ class Selection(Composites):
 
 
 class BatteryCond(Node):
-    def __init__(self, blackboard, low, high):
-        self.low = low
-        self.high = high
+    def __init__(self, blackboard, level):
+        self.level = level
         self.blackboard = blackboard
 
     def action(self):
-        if self.low <= self.blackboard['BATTERY_LEVEL'] < self.high:
+        if self.level == 100:
+            if self.blackboard['BATTERY_LEVEL'] > 30:
+                return 'True'
+        if self.blackboard['BATTERY_LEVEL'] < self.level:
+            print("LOW BATTERY!")
             return 'True'
         else:
             return 'False'
@@ -71,23 +73,37 @@ class BatteryCond(Node):
 class FindHome(Node):
     def action(self):
         self.blackboard['HOME_PATH'] = 'A new home path.'
+        self.blackboard['SPOT'] = False
         print('I found a path to home!')
-        return "True"
+        return 'True'
 
 
 class GoHome(Node):
-    batteryLostPerSec = 0.1
+    def __init__(self, blackboard):
+        self.blackboard = blackboard
 
     def action(self):
-        self.blackboard['BATTERY_LEVEL'] -= self.batteryLostPerSec * random.randrange(1,10,1)
-        print "I'm going home!"
-        return 'True'
+        self.blackboard['RUNNING_NODE'] = self
+
+        if self.blackboard['TASK_TIME'] == 0:
+            self.blackboard['TASK_TIME'] = random.randrange(1,10,1)
+        
+        print("I'm going home! Approximately " + str(self.blackboard['TASK_TIME']) + " sec away.")
+
+        if self.blackboard['TASK_TIME'] > 1:
+            return 'Running'
+        else:
+            return 'True'
 
 
 class Dock(Node):
     def action(self):
         self.blackboard['BATTERY_LEVEL'] = 100
-        print "Charging...Charging complete! The current battery level is: " + str(self.blackboard['BATTERY_LEVEL'])
+        self.blackboard['SPOT'] = False
+        self.blackboard['CLEANING_DUSTY_SPOT'] = False
+        self.blackboard['GENERAL'] = True
+        print("Charging...")
+        print("Charging complete! The current battery level is: " + str(self.blackboard['BATTERY_LEVEL']))
         return 'True'
 
 
@@ -100,41 +116,33 @@ class SpotCond(Node):
 
 
 class CleanSpot(Node):
-    batteryLostPerSec = 1
-
     def __init__(self, blackboard, worktime):
-        self.worktime = worktime  # the time set to work
+        self.worktime = worktime 
         self.blackboard = blackboard
 
     def action(self):
         # begin to clean spot
-        if self.blackboard['RUNNING_NODE'] != self:
-            self.blackboard['RUNNING_NODE'] = self
-            self.blackboard['START_TIME'] = time.time()
-            if self.worktime <= 20:
+        if self.blackboard['TASK_TIME'] == 0:
+            self.blackboard['TASK_TIME'] = self.worktime
+        if self.blackboard['TASK_TIME'] > 1:
+            if self.blackboard['CLEANING_DUSTY_SPOT']:
+                print("I am cleaning a dusty spot!")
+            else:
                 print("I'm cleaning a spot!")
-            else:
-                print("I'm cleaning a dusty spot!")
+
+            print("There is " + str(self.blackboard['TASK_TIME']) + " left.")
             return 'Running'
-        else:  # cleaning the spot
-            timedelta = time.time() - self.blackboard['START_TIME']
-            if timedelta >= self.worktime:  # finished working
-                self.blackboard['RUNNING_NODE'] = None
-                self.blackboard['BATTERY_LEVEL'] -= CleanSpot.batteryLostPerSec * self.worktime
-                self.blackboard['CLEANING_DUSTY_SPOT'] = False
-                return 'True'
-            else:
-                if self.worktime <= 20:
-                    print("I'm cleaning a spot!")
-                else:
-                    print("I'm cleaning a dusty spot!")
-                return 'Running'
+        else: 
+            self.blackboard['SPOT'] = False
+            self.blackboard['CLEANING_DUSTY_SPOT'] = False
+            return 'True'
 
 
 class DoneSpot(Node):
     def action(self):
         self.blackboard['SPOT'] = False
-        print("I've done spot clean!")
+        print("I am done cleaning spot!")
+        self.blackboard['GENERAL'] = True
         return 'True'
 
 
@@ -148,10 +156,8 @@ class GeneralCond(Node):
 
 class DustySpotCond(Node):
     def action(self):
-        index = random.choice([1, 2, 3, 4, 5])
-        print("index"+str(index))
-        print(self.blackboard['CLEANING_DUSTY_SPOT'])
-        if not self.blackboard['CLEANING_DUSTY_SPOT'] and index == 3:  # if index=3 then it's a dusty spot
+        dusty_prob = random.random()
+        if not self.blackboard['CLEANING_DUSTY_SPOT'] and dusty_prob <= 0.1:  # 10% chance of encountering
             self.blackboard['CLEANING_DUSTY_SPOT'] = True
             return 'True'
         elif self.blackboard['CLEANING_DUSTY_SPOT']:
@@ -162,17 +168,15 @@ class DustySpotCond(Node):
 
 class Clean(Node):
     def action(self):
-        lost = random.randrange(5,10,1)
-        self.blackboard['BATTERY_LEVEL'] -= lost
-        self.blackboard['CLEANING_DUSTY_SPOT'] = False
-        print("I've done cleaning!")
+        print("I am cleaning!")
         return 'True'
 
 
 class DoneGeneral(Node):
     def action(self):
-        print ("I've done gereral cleaning!")
-        self.blackboard['GENERAL'] = False
+        if self.blackboard['GENERAL'] == False:
+            print ("I am done with cleaning!")
+            return 'False'
         return 'True'
 
 
